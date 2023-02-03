@@ -1,0 +1,84 @@
+使用 config.gradle 配置依赖
+当一个 project 中包含多个 module 的时候为了方便，可以在 project 根目录新建一个文件叫 config.gradle 专门用来管理依赖版本。示例如下：
+
+ext {
+    versionCode = 1
+    versionName = "1.0.0"
+}
+
+ext {
+    buildToolsVersion = "27.0.3"
+    compileSdkVersion = 27
+    minSdkVersion = 14
+    targetSdkVersion = 27
+}
+
+def kotlin_version = "1.2.30"
+
+ext.plugin = [
+        "android"      : "com.android.tools.build:gradle:3.0.1",
+        "kotlin"       : "org.jetbrains.kotlin:kotlin-gradle-plugin:${kotlin_version}",
+        "bintray"      : "com.jfrog.bintray.gradle:gradle-bintray-plugin:1.7.3",
+        "android-maven": "com.github.dcendents:android-maven-gradle-plugin:1.5",
+]
+
+ext.lib = [
+        "kotlin-stdlib-jre7": "org.jetbrains.kotlin:kotlin-stdlib-jre7:${kotlin_version}",
+        "recyclerview-v7"   : "com.android.support:recyclerview-v7:27.0.2",
+        "test-runner"       : "com.android.support.test:runner:0.5"
+]
+修改 project 目录下的 build.gradle
+在 project 的 build.gradle 中引用：
+
+buildscript {
+    apply from: './config.gradle'
+
+    ...
+}
+
+...
+然后 project 中的依赖统一这样配置：
+
+buildscript {
+    ...
+
+    dependencies {
+        classpath rootProject.plugin["android"]
+        classpath rootProject.plugin["kotlin"]
+        classpath rootProject.plugin["bintray"]
+        classpath rootProject.plugin["android-maven"]
+    }
+}
+...
+修改 module 目录下的 build.gradle
+在 module 中的依赖统一这样配置：
+
+...
+
+android {
+    compileSdkVersion rootProject.compileSdkVersion
+    buildToolsVersion rootProject.buildToolsVersion
+
+    defaultConfig {
+        minSdkVersion rootProject.minSdkVersion
+        targetSdkVersion rootProject.targetSdkVersion
+        versionCode rootProject.versionCode
+        versionName rootProject.versionName
+
+        ...
+    }
+
+    ...
+}
+
+dependencies {
+    implementation rootProject.lib["kotlin-stdlib-jre7"]
+    implementation rootProject.lib["recyclerview-v7"]
+    androidTestImplementation rootProject.lib["test-runner"]
+}
+把配置文件托管在服务器上
+我上面写的是把配置文件放在本地的，有需求的话可以将 config.gradle 文件以静态文件的方式在服务器上发布，即可在多个不同的 project 使用同一份配置。例如将配置文件上传到 Github 后，在该文件的浏览页面获取 url：
+
+
+
+把 project 的 build.config 中引用语句改为：apply from: 'your/url' 即可。
